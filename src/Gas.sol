@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "./Ownable.sol";
+// import "./Ownable.sol";
 
 // contract Constants {
 // uint256 public constant tradeFlag = 1;
@@ -9,12 +9,12 @@ import "./Ownable.sol";
 // uint256 public dividendFlag = 1;
 // }
 
-contract GasContract is Ownable {
+contract GasContract {
     uint256 public immutable totalSupply; // cannot be updated
+    address public immutable contractOwner;
     uint256 public paymentCounter = 0;
     mapping(address => uint256) public balances;
     uint256 public tradePercent = 12;
-    address public contractOwner;
     uint256 public tradeMode = 0;
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
@@ -22,6 +22,7 @@ contract GasContract is Ownable {
     bool public isReady = false;
 
     error GasContract__NotOwnerOrAdmin();
+    error GasContract__NotCorrectlyWhitelisted();
 
     enum PaymentType {
         Unknown,
@@ -68,11 +69,9 @@ contract GasContract is Ownable {
     event AddedToWhitelist(address userAddress, uint256 tier);
 
     modifier onlyAdminOrOwner() {
-        address senderOfTx = msg.sender;
-        address owner = owner();
-        if (owner == msg.sender) {
-            _;
-        } else if (checkForAdmin(msg.sender)) {
+        // address senderOfTx = msg.sender;
+        // address owner = owner();
+        if (contractOwner == msg.sender || checkForAdmin(msg.sender)) {
             _;
         } else {
             revert GasContract__NotOwnerOrAdmin();
@@ -80,20 +79,23 @@ contract GasContract is Ownable {
     }
 
     modifier checkIfWhiteListed(address sender) {
-        address senderOfTx = msg.sender;
-        require(
-            senderOfTx == sender,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the originator of the transaction was not the sender"
-        );
-        uint256 usersTier = whitelist[senderOfTx];
-        require(
-            usersTier > 0,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
-        );
-        require(
-            usersTier < 4,
-            "Gas Contract CheckIfWhiteListed modifier : revert happened because the user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3; therfore 4 is an invalid tier for the whitlist of this contract. make sure whitlist tiers were set correctly"
-        );
+        // address senderOfTx = msg.sender;
+        // require(
+        //     senderOfTx == sender,
+        //     "Gas Contract CheckIfWhiteListed modifier : revert happened because the originator of the transaction was not the sender"
+        // );
+        uint256 usersTier = whitelist[msg.sender];
+        // require(
+        //     usersTier > 0,
+        //     "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
+        // );
+        // require(
+        //     usersTier < 4,
+        //     "Gas Contract CheckIfWhiteListed modifier : revert happened because the user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3; therfore 4 is an invalid tier for the whitlist of this contract. make sure whitlist tiers were set correctly"
+        // );
+        if (usersTier == 0 || usersTier > 4) {
+            revert GasContract__NotCorrectlyWhitelisted();
+        }
         _;
     }
 
@@ -102,7 +104,7 @@ contract GasContract is Ownable {
     event PaymentUpdated(address admin, uint256 ID, uint256 amount, string recipient);
     event WhiteListTransfer(address indexed);
 
-    constructor(address[] memory _admins, uint256 _totalSupply) Ownable() {
+    constructor(address[] memory _admins, uint256 _totalSupply) {
         contractOwner = msg.sender;
         totalSupply = _totalSupply;
 
@@ -137,8 +139,9 @@ contract GasContract is Ownable {
         return false;
     }
 
-    function balanceOf(address _user) public view returns (uint256) {
-        return balances[_user];
+    function balanceOf(address _user) public view returns (uint256 balance_) {
+        uint256 balance = balances[_user];
+        return balance;
     }
 
     // function getTradingMode() public pure returns (bool mode_) {

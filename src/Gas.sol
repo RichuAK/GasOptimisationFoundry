@@ -5,7 +5,8 @@ contract GasContract {
     uint256 public immutable totalSupply;
     address public immutable contractOwner;
     address[5] public administrators;
-    mapping(address => ImportantStruct) public whiteListStruct;
+    // mapping(address => ImportantStruct) public whiteListStruct;
+    mapping(address => uint256) public whiteListTransferAmount;
     mapping(address => uint256) public whitelist;
     mapping(address => uint256) public balances;
 
@@ -15,10 +16,19 @@ contract GasContract {
     error GasContract__InsufficientBalance();
     error GasContract__NameTooLong();
 
-    struct ImportantStruct {
-        uint256 amount;
-        bool paymentStatus;
-    }
+    // struct ImportantStruct {
+    //     uint256 amount;
+    // }
+    // bool paymentStatus;
+
+    /// @dev cheap tricky modifier
+    // modifier onlyAdminOrOwner() {
+    //     if (contractOwner == msg.sender) {
+    //         _;
+    //     } else {
+    //         revert GasContract__NotOwnerOrAdmin();
+    //     }
+    // }
 
     modifier onlyAdminOrOwner() {
         if (contractOwner == msg.sender || checkForAdmin(msg.sender)) {
@@ -28,7 +38,7 @@ contract GasContract {
         }
     }
 
-    modifier checkIfWhiteListed(address sender) {
+    modifier checkIfWhiteListed() {
         uint256 usersTier = whitelist[msg.sender];
         if (usersTier == 0 || usersTier > 4) {
             revert GasContract__NotCorrectlyWhitelisted();
@@ -91,17 +101,20 @@ contract GasContract {
         emit AddedToWhitelist(_userAddrs, _tier);
     }
 
-    function whiteTransfer(address _recipient, uint256 _amount) public checkIfWhiteListed(msg.sender) {
+    function whiteTransfer(address _recipient, uint256 _amount) public checkIfWhiteListed {
         if (balances[msg.sender] < _amount) revert GasContract__InsufficientBalance();
-        whiteListStruct[msg.sender] = ImportantStruct(_amount, true);
-        balances[msg.sender] = balances[msg.sender] - _amount + whitelist[msg.sender];
-        balances[_recipient] = balances[_recipient] + _amount - whitelist[msg.sender];
+        // whiteListStruct[msg.sender] = ImportantStruct(_amount);
+        whiteListTransferAmount[msg.sender] = _amount;
+        uint256 whitelistOfMsgSender = whitelist[msg.sender];
+        balances[msg.sender] = balances[msg.sender] - _amount + whitelistOfMsgSender;
+        balances[_recipient] = balances[_recipient] + _amount - whitelistOfMsgSender;
 
         emit WhiteListTransfer(_recipient);
     }
 
     function getPaymentStatus(address sender) public view returns (bool, uint256) {
-        return (whiteListStruct[sender].paymentStatus, whiteListStruct[sender].amount);
+        // return (true, whiteListStruct[sender].amount);
+        return (true, whiteListTransferAmount[sender]);
     }
 
     receive() external payable {

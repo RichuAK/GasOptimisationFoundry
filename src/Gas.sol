@@ -2,11 +2,8 @@
 pragma solidity ^0.8.0;
 
 contract GasContract {
-    // uint256 public constant tradePercent = 12;
     uint256 public immutable totalSupply;
     address public immutable contractOwner;
-    // uint256 public paymentCounter = 0;
-    // mapping(address => Payment[]) public payments;
     address[5] public administrators;
     mapping(address => ImportantStruct) public whiteListStruct;
     mapping(address => uint256) public whitelist;
@@ -27,20 +24,14 @@ contract GasContract {
         GroupPayment
     }
 
-    // PaymentType constant defaultPayment = PaymentType.Unknown;
-
     struct Payment {
         PaymentType paymentType;
-        // uint256 paymentID;
         bool adminUpdated;
         string recipientName; // max 8 characters
         address recipient;
         address admin; // administrators address
         uint256 amount;
     }
-
-    // uint256 wasLastOdd = 1;
-    // mapping(address => uint256) public isOddWhitelistUser;
 
     struct ImportantStruct {
         uint256 amount;
@@ -68,7 +59,6 @@ contract GasContract {
     }
 
     event AddedToWhitelist(address userAddress, uint256 tier);
-    // event supplyChanged(address indexed, uint256 indexed);
     event Transfer(address recipient, uint256 amount);
     event PaymentUpdated(address admin, uint256 ID, uint256 amount, string recipient);
     event WhiteListTransfer(address indexed);
@@ -77,19 +67,6 @@ contract GasContract {
         contractOwner = msg.sender;
         totalSupply = _totalSupply;
 
-        // for (uint256 i = 0; i < 5; i++) {
-        //     if (_admins[i] != address(0)) {
-        //         administrators[i] = _admins[i];
-        //         if (_admins[i] == contractOwner) {
-        //             balances[contractOwner] = totalSupply;
-        //             emit supplyChanged(_admins[i], totalSupply);
-        //         } else {
-        //             balances[_admins[i]] = 0;
-        //             emit supplyChanged(_admins[i], 0);
-        //         }
-        //     }
-        // }
-
         for (uint256 i = 0; i < 5; i++) {
             administrators[i] = _admins[i];
         }
@@ -97,7 +74,6 @@ contract GasContract {
     }
 
     function checkForAdmin(address _user) public view returns (bool) {
-        // bool admin = false;
         for (uint256 ii = 0; ii < 5; ii++) {
             if (administrators[ii] == _user) {
                 return true;
@@ -107,7 +83,6 @@ contract GasContract {
     }
 
     function balanceOf(address _user) public view returns (uint256 balance_) {
-        // uint256 balance = balances[_user];
         return balances[_user];
     }
 
@@ -128,19 +103,11 @@ contract GasContract {
         payment.recipient = _recipient;
         payment.amount = _amount;
         payment.recipientName = _name;
-        // payment.paymentID = ++paymentCounter;
-        // payments[msg.sender].push(payment);
-        // bool[] memory status = new bool[](tradePercent);
-        // for (uint256 i = 0; i < tradePercent; i++) {
-        //     status[i] = true;
-        // }
-        // return (status[0] == true);
         return true;
     }
 
     function addToWhitelist(address _userAddrs, uint256 _tier) public onlyAdminOrOwner {
         if (_tier >= 255) revert GasContract__NotCorrectlyWhitelisted();
-        // require(_tier < 255, "Gas Contract - addToWhitelist function -  tier level should not be greater than 255");
         whitelist[_userAddrs] = _tier;
         if (_tier > 3) {
             whitelist[_userAddrs] -= _tier;
@@ -152,16 +119,6 @@ contract GasContract {
             whitelist[_userAddrs] -= _tier;
             whitelist[_userAddrs] = 2;
         }
-        // uint256 wasLastAddedOdd = wasLastOdd;
-        // if (wasLastAddedOdd == 1) {
-        //     wasLastOdd = 0;
-        //     isOddWhitelistUser[_userAddrs] = wasLastAddedOdd;
-        // } else if (wasLastAddedOdd == 0) {
-        //     wasLastOdd = 1;
-        //     isOddWhitelistUser[_userAddrs] = wasLastAddedOdd;
-        // } else {
-        //     revert GasContract__NotCorrectlyWhitelisted();
-        // }
         emit AddedToWhitelist(_userAddrs, _tier);
     }
 

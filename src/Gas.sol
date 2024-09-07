@@ -10,19 +10,22 @@ pragma solidity ^0.8.0;
 // }
 
 contract GasContract {
+    uint256 public constant tradePercent = 12;
     uint256 public immutable totalSupply; // cannot be updated
     address public immutable contractOwner;
     uint256 public paymentCounter = 0;
     mapping(address => uint256) public balances;
-    uint256 public tradePercent = 12;
-    uint256 public tradeMode = 0;
+    // uint256 public tradeMode = 0;
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
     address[5] public administrators;
-    bool public isReady = false;
+    // bool public isReady = false;
 
     error GasContract__NotOwnerOrAdmin();
     error GasContract__NotCorrectlyWhitelisted();
+    error GasContract__ZeroAddress();
+    error GasContract__InsufficientBalance();
+    error GasContract__NameTooLong();
 
     enum PaymentType {
         Unknown,
@@ -108,19 +111,19 @@ contract GasContract {
         contractOwner = msg.sender;
         totalSupply = _totalSupply;
 
-        for (uint256 i = 0; i < administrators.length; i++) {
+        for (uint256 i = 0; i < 5; i++) {
             if (_admins[i] != address(0)) {
                 administrators[i] = _admins[i];
                 if (_admins[i] == contractOwner) {
                     balances[contractOwner] = totalSupply;
+                    emit supplyChanged(_admins[i], totalSupply);
                 } else {
                     balances[_admins[i]] = 0;
-                }
-                if (_admins[i] == contractOwner) {
-                    emit supplyChanged(_admins[i], totalSupply);
-                } else if (_admins[i] != contractOwner) {
                     emit supplyChanged(_admins[i], 0);
                 }
+                // if (_admins[i] == contractOwner) {
+                // } else if (_admins[i] != contractOwner) {
+                // }
             }
         }
     }
@@ -140,8 +143,8 @@ contract GasContract {
     }
 
     function balanceOf(address _user) public view returns (uint256 balance_) {
-        uint256 balance = balances[_user];
-        return balance;
+        // uint256 balance = balances[_user];
+        return balances[_user];
     }
 
     // function getTradingMode() public pure returns (bool mode_) {
@@ -167,19 +170,27 @@ contract GasContract {
     //     return ((status[0] == true), _tradeMode);
     // }
 
-    function getPayments(address _user) public view returns (Payment[] memory payments_) {
-        require(_user != address(0), "Gas Contract - getPayments function - User must have a valid non zero address");
-        return payments[_user];
-    }
+    // function getPayments(address _user) public view returns (Payment[] memory payments_) {
+    //     if (_user == address(0)) {
+    //         revert GasContract__ZeroAddress();
+    //     }
+    //     return payments[_user];
+    // }
 
     function transfer(address _recipient, uint256 _amount, string calldata _name) public returns (bool status_) {
-        address senderOfTx = msg.sender;
-        require(balances[senderOfTx] >= _amount, "Gas Contract - Transfer function - Sender has insufficient Balance");
-        require(
-            bytes(_name).length < 9,
-            "Gas Contract - Transfer function -  The recipient name is too long, there is a max length of 8 characters"
-        );
-        balances[senderOfTx] -= _amount;
+        // address senderOfTx = msg.sender;
+        // require(balances[senderOfTx] >= _amount, "Gas Contract - Transfer function - Sender has insufficient Balance");
+        if (balances[msg.sender] < _amount) {
+            revert GasContract__InsufficientBalance();
+        }
+        if (bytes(_name).length > 8) {
+            revert GasContract__NameTooLong();
+        }
+        // require(
+        //     bytes(_name).length < 9,
+        //     "Gas Contract - Transfer function -  The recipient name is too long, there is a max length of 8 characters"
+        // );
+        balances[msg.sender] -= _amount;
         balances[_recipient] += _amount;
         emit Transfer(_recipient, _amount);
         Payment memory payment;
@@ -190,7 +201,7 @@ contract GasContract {
         payment.amount = _amount;
         payment.recipientName = _name;
         payment.paymentID = ++paymentCounter;
-        payments[senderOfTx].push(payment);
+        payments[msg.sender].push(payment);
         bool[] memory status = new bool[](tradePercent);
         for (uint256 i = 0; i < tradePercent; i++) {
             status[i] = true;

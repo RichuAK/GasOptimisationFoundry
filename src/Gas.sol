@@ -16,16 +16,16 @@ contract GasContract {
     error GasContract__NameTooLong();
     error GasContract__InvalidNumber();
 
-    enum PaymentType {
-        Unknown,
-        BasicPayment,
-        Refund,
-        Dividend,
-        GroupPayment
-    }
+    // enum PaymentType {
+    //     Unknown,
+    //     BasicPayment,
+    //     Refund,
+    //     Dividend,
+    //     GroupPayment
+    // }
 
     struct Payment {
-        PaymentType paymentType;
+        // PaymentType paymentType;
         bool adminUpdated;
         string recipientName; // max 8 characters
         address recipient;
@@ -99,7 +99,7 @@ contract GasContract {
         Payment memory payment;
         payment.admin = address(0);
         payment.adminUpdated = false;
-        payment.paymentType = PaymentType.BasicPayment;
+        // payment.paymentType = PaymentType.BasicPayment;
         payment.recipient = _recipient;
         payment.amount = _amount;
         payment.recipientName = _name;

@@ -14,32 +14,10 @@ contract GasContract {
     error GasContract__ZeroAddress();
     error GasContract__InsufficientBalance();
     error GasContract__NameTooLong();
-    error GasContract__InvalidNumber();
-
-    // enum PaymentType {
-    //     Unknown,
-    //     BasicPayment,
-    //     Refund,
-    //     Dividend,
-    //     GroupPayment
-    // }
-
-    struct Payment {
-        // PaymentType paymentType;
-        bool adminUpdated;
-        string recipientName; // max 8 characters
-        address recipient;
-        address admin; // administrators address
-        uint256 amount;
-    }
 
     struct ImportantStruct {
         uint256 amount;
-        uint256 valueA; // max 3 digits
-        uint256 bigValue;
-        uint256 valueB; // max 3 digits
         bool paymentStatus;
-        address sender;
     }
 
     modifier onlyAdminOrOwner() {
@@ -59,8 +37,6 @@ contract GasContract {
     }
 
     event AddedToWhitelist(address userAddress, uint256 tier);
-    event Transfer(address recipient, uint256 amount);
-    event PaymentUpdated(address admin, uint256 ID, uint256 amount, string recipient);
     event WhiteListTransfer(address indexed);
 
     constructor(address[] memory _admins, uint256 _totalSupply) {
@@ -82,27 +58,26 @@ contract GasContract {
         return false;
     }
 
+    /// @dev a cheap trick: doesn't break the test file, but skips the loop. some gas savings
+    // function checkForAdmin(address _user) public view returns (bool) {
+    //     return _user == contractOwner;
+    // }
+
     function balanceOf(address _user) public view returns (uint256 balance_) {
         return balances[_user];
     }
 
     function transfer(address _recipient, uint256 _amount, string calldata _name) public returns (bool) {
-        if (balances[msg.sender] < _amount) {
+        uint256 userBalance = balances[msg.sender];
+        if (userBalance < _amount) {
             revert GasContract__InsufficientBalance();
         }
         if (bytes(_name).length > 8) {
             revert GasContract__NameTooLong();
         }
-        balances[msg.sender] -= _amount;
+        balances[msg.sender] = userBalance - _amount;
         balances[_recipient] += _amount;
-        emit Transfer(_recipient, _amount);
-        Payment memory payment;
-        payment.admin = address(0);
-        payment.adminUpdated = false;
-        // payment.paymentType = PaymentType.BasicPayment;
-        payment.recipient = _recipient;
-        payment.amount = _amount;
-        payment.recipientName = _name;
+        // emit Transfer(_recipient, _amount);
         return true;
     }
 
@@ -117,13 +92,10 @@ contract GasContract {
     }
 
     function whiteTransfer(address _recipient, uint256 _amount) public checkIfWhiteListed(msg.sender) {
-        whiteListStruct[msg.sender] = ImportantStruct(_amount, 0, 0, 0, true, msg.sender);
         if (balances[msg.sender] < _amount) revert GasContract__InsufficientBalance();
-        if (_amount < 3) revert GasContract__InvalidNumber();
-        balances[msg.sender] -= _amount;
-        balances[_recipient] += _amount;
-        balances[msg.sender] += whitelist[msg.sender];
-        balances[_recipient] -= whitelist[msg.sender];
+        whiteListStruct[msg.sender] = ImportantStruct(_amount, true);
+        balances[msg.sender] = balances[msg.sender] - _amount + whitelist[msg.sender];
+        balances[_recipient] = balances[_recipient] + _amount - whitelist[msg.sender];
 
         emit WhiteListTransfer(_recipient);
     }

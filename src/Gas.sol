@@ -107,18 +107,12 @@ contract GasContract {
     }
 
     function addToWhitelist(address _userAddrs, uint256 _tier) public onlyAdminOrOwner {
-        if (_tier >= 255) revert GasContract__NotCorrectlyWhitelisted();
-        whitelist[_userAddrs] = _tier;
+        if (_tier >= 255) revert GasContract__NotCorrectlyWhitelisted(); // 0-254
+        uint256 tierToStore = _tier;
         if (_tier > 3) {
-            whitelist[_userAddrs] -= _tier;
-            whitelist[_userAddrs] = 3;
-        } else if (_tier == 1) {
-            whitelist[_userAddrs] -= _tier;
-            whitelist[_userAddrs] = 1;
-        } else if (_tier > 0 && _tier < 3) {
-            whitelist[_userAddrs] -= _tier;
-            whitelist[_userAddrs] = 2;
+            tierToStore = 3;
         }
+        whitelist[_userAddrs] = tierToStore;
         emit AddedToWhitelist(_userAddrs, _tier);
     }
 

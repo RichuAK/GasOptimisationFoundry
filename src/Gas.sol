@@ -1,25 +1,15 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-// import "./Ownable.sol";
-
-// contract Constants {
-// uint256 public constant tradeFlag = 1;
-// uint256 public basicFlag = 0;
-// uint256 public dividendFlag = 1;
-// }
-
 contract GasContract {
     uint256 public constant tradePercent = 12;
-    uint256 public immutable totalSupply; // cannot be updated
+    uint256 public immutable totalSupply;
     address public immutable contractOwner;
     uint256 public paymentCounter = 0;
     mapping(address => uint256) public balances;
-    // uint256 public tradeMode = 0;
     mapping(address => Payment[]) public payments;
     mapping(address => uint256) public whitelist;
     address[5] public administrators;
-    // bool public isReady = false;
 
     error GasContract__NotOwnerOrAdmin();
     error GasContract__NotCorrectlyWhitelisted();
@@ -37,8 +27,6 @@ contract GasContract {
 
     PaymentType constant defaultPayment = PaymentType.Unknown;
 
-    // History[] public paymentHistory; // when a payment was updated
-
     struct Payment {
         PaymentType paymentType;
         uint256 paymentID;
@@ -48,12 +36,6 @@ contract GasContract {
         address admin; // administrators address
         uint256 amount;
     }
-
-    // struct History {
-    //     uint256 lastUpdate;
-    //     address updatedBy;
-    //     uint256 blockNumber;
-    // }
 
     uint256 wasLastOdd = 1;
     mapping(address => uint256) public isOddWhitelistUser;
@@ -72,8 +54,6 @@ contract GasContract {
     event AddedToWhitelist(address userAddress, uint256 tier);
 
     modifier onlyAdminOrOwner() {
-        // address senderOfTx = msg.sender;
-        // address owner = owner();
         if (contractOwner == msg.sender || checkForAdmin(msg.sender)) {
             _;
         } else {
@@ -82,20 +62,7 @@ contract GasContract {
     }
 
     modifier checkIfWhiteListed(address sender) {
-        // address senderOfTx = msg.sender;
-        // require(
-        //     senderOfTx == sender,
-        //     "Gas Contract CheckIfWhiteListed modifier : revert happened because the originator of the transaction was not the sender"
-        // );
         uint256 usersTier = whitelist[msg.sender];
-        // require(
-        //     usersTier > 0,
-        //     "Gas Contract CheckIfWhiteListed modifier : revert happened because the user is not whitelisted"
-        // );
-        // require(
-        //     usersTier < 4,
-        //     "Gas Contract CheckIfWhiteListed modifier : revert happened because the user's tier is incorrect, it cannot be over 4 as the only tier we have are: 1, 2, 3; therfore 4 is an invalid tier for the whitlist of this contract. make sure whitlist tiers were set correctly"
-        // );
         if (usersTier == 0 || usersTier > 4) {
             revert GasContract__NotCorrectlyWhitelisted();
         }
@@ -121,16 +88,9 @@ contract GasContract {
                     balances[_admins[i]] = 0;
                     emit supplyChanged(_admins[i], 0);
                 }
-                // if (_admins[i] == contractOwner) {
-                // } else if (_admins[i] != contractOwner) {
-                // }
             }
         }
     }
-
-    // function getPaymentHistory() public payable returns (History[] memory paymentHistory_) {
-    //     return paymentHistory;
-    // }
 
     function checkForAdmin(address _user) public view returns (bool) {
         // bool admin = false;
@@ -147,49 +107,13 @@ contract GasContract {
         return balances[_user];
     }
 
-    // function getTradingMode() public pure returns (bool mode_) {
-    // bool mode = false;
-    // if (tradeFlag == 1 || dividendFlag == 1) {
-    //     mode = true;
-    // } else {
-    //     mode = false;
-    // }
-    //     return true;
-    // }
-
-    // function addHistory(address _updateAddress, bool _tradeMode) public returns (bool status_, bool tradeMode_) {
-    //     History memory history;
-    //     history.blockNumber = block.number;
-    //     history.lastUpdate = block.timestamp;
-    //     history.updatedBy = _updateAddress;
-    //     paymentHistory.push(history);
-    //     bool[] memory status = new bool[](tradePercent);
-    //     for (uint256 i = 0; i < tradePercent; i++) {
-    //         status[i] = true;
-    //     }
-    //     return ((status[0] == true), _tradeMode);
-    // }
-
-    // function getPayments(address _user) public view returns (Payment[] memory payments_) {
-    //     if (_user == address(0)) {
-    //         revert GasContract__ZeroAddress();
-    //     }
-    //     return payments[_user];
-    // }
-
     function transfer(address _recipient, uint256 _amount, string calldata _name) public returns (bool status_) {
-        // address senderOfTx = msg.sender;
-        // require(balances[senderOfTx] >= _amount, "Gas Contract - Transfer function - Sender has insufficient Balance");
         if (balances[msg.sender] < _amount) {
             revert GasContract__InsufficientBalance();
         }
         if (bytes(_name).length > 8) {
             revert GasContract__NameTooLong();
         }
-        // require(
-        //     bytes(_name).length < 9,
-        //     "Gas Contract - Transfer function -  The recipient name is too long, there is a max length of 8 characters"
-        // );
         balances[msg.sender] -= _amount;
         balances[_recipient] += _amount;
         emit Transfer(_recipient, _amount);
@@ -208,29 +132,6 @@ contract GasContract {
         }
         return (status[0] == true);
     }
-
-    // function updatePayment(address _user, uint256 _ID, uint256 _amount, PaymentType _type) public onlyAdminOrOwner {
-    //     require(_ID > 0, "Gas Contract - Update Payment function - ID must be greater than 0");
-    //     require(_amount > 0, "Gas Contract - Update Payment function - Amount must be greater than 0");
-    //     require(
-    //         _user != address(0),
-    //         "Gas Contract - Update Payment function - Administrator must have a valid non zero address"
-    //     );
-
-    //     address senderOfTx = msg.sender;
-
-    //     for (uint256 ii = 0; ii < payments[_user].length; ii++) {
-    //         if (payments[_user][ii].paymentID == _ID) {
-    //             payments[_user][ii].adminUpdated = true;
-    //             payments[_user][ii].admin = _user;
-    //             payments[_user][ii].paymentType = _type;
-    //             payments[_user][ii].amount = _amount;
-    //             // bool tradingMode = getTradingMode();
-    //             // addHistory(_user, tradingMode);
-    //             emit PaymentUpdated(senderOfTx, _ID, _amount, payments[_user][ii].recipientName);
-    //         }
-    //     }
-    // }
 
     function addToWhitelist(address _userAddrs, uint256 _tier) public onlyAdminOrOwner {
         require(_tier < 255, "Gas Contract - addToWhitelist function -  tier level should not be greater than 255");

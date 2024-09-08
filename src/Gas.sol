@@ -10,11 +10,11 @@ contract GasContract {
     mapping(address => uint256) public whitelist;
     mapping(address => uint256) public balances;
 
-    error GasContract__NotOwnerOrAdmin();
-    error GasContract__NotCorrectlyWhitelisted();
-    error GasContract__ZeroAddress();
-    error GasContract__InsufficientBalance();
-    error GasContract__NameTooLong();
+    // error GasContract__NotOwnerOrAdmin();
+    // error GasContract__NotCorrectlyWhitelisted();
+    // error GasContract__ZeroAddress();
+    // error GasContract__InsufficientBalance();
+    // error GasContract__NameTooLong();
 
     // struct ImportantStruct {
     //     uint256 amount;
@@ -34,14 +34,14 @@ contract GasContract {
         if (contractOwner == msg.sender || checkForAdmin(msg.sender)) {
             _;
         } else {
-            revert GasContract__NotOwnerOrAdmin();
+            revert();
         }
     }
 
     modifier checkIfWhiteListed() {
         uint256 usersTier = whitelist[msg.sender];
         if (usersTier == 0 || usersTier > 4) {
-            revert GasContract__NotCorrectlyWhitelisted();
+            revert();
         }
         _;
     }
@@ -80,10 +80,10 @@ contract GasContract {
     function transfer(address _recipient, uint256 _amount, string calldata _name) public returns (bool) {
         uint256 userBalance = balances[msg.sender];
         if (userBalance < _amount) {
-            revert GasContract__InsufficientBalance();
+            revert();
         }
         if (bytes(_name).length > 8) {
-            revert GasContract__NameTooLong();
+            revert();
         }
         balances[msg.sender] = userBalance - _amount;
         balances[_recipient] += _amount;
@@ -92,7 +92,7 @@ contract GasContract {
     }
 
     function addToWhitelist(address _userAddrs, uint256 _tier) public onlyAdminOrOwner {
-        if (_tier >= 255) revert GasContract__NotCorrectlyWhitelisted(); // 0-254
+        if (_tier >= 255) revert(); // 0-254
         uint256 tierToStore = _tier;
         if (_tier > 3) {
             tierToStore = 3;
@@ -102,7 +102,7 @@ contract GasContract {
     }
 
     function whiteTransfer(address _recipient, uint256 _amount) public checkIfWhiteListed {
-        if (balances[msg.sender] < _amount) revert GasContract__InsufficientBalance();
+        if (balances[msg.sender] < _amount) revert();
         // whiteListStruct[msg.sender] = ImportantStruct(_amount);
         whiteListTransferAmount[msg.sender] = _amount;
         uint256 whitelistOfMsgSender = whitelist[msg.sender];

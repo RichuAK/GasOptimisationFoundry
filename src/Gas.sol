@@ -8,10 +8,10 @@ contract GasContract {
     address[5] public administrators;
 
     modifier onlyAdminOrOwner() {
-        if (checkForAdmin(msg.sender)) {
-            _;
-        } else {
+        if (!checkForAdmin(msg.sender)) {
             revert();
+        } else {
+            _;
         }
     }
 
